@@ -30,7 +30,7 @@ class GuitarLSTMModel(kt.HyperModel):
         model.add(Conv1D(conv1d_filters, 12,strides=conv1d_strides, activation=None, padding='same'))
         model.add(LSTM(hidden_units))
         model.add(Dense(1, activation=None))
-        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate), loss=error_to_signal, metrics=[error_to_signal, 'accuracy'])
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate), loss=error_to_signal, metrics=[error_to_signal])
         return model
 
     def fit(self, hp : kt.HyperParameters, model, *args, **kwargs):
@@ -91,7 +91,7 @@ def main(args):
 
     tuner = kt.Hyperband(
         GuitarLSTMModel(),
-        objective=error_to_signal,
+        objective="mean_squared_error",
         max_epochs=args.max_epochs,
         hyperband_iterations=30
     )
