@@ -158,7 +158,7 @@ if __name__ == "__main__":
     parser.add_argument("out_file")
     parser.add_argument("name")
     parser.add_argument("--batch_size", type=int, default=4096)
-    parser.add_argument("--max_epochs", type=int, default=1)
+    parser.add_argument("--max_epochs", type=int, default=8)
     parser.add_argument("--create_plots", type=int, default=0)
 
     args = parser.parse_args()
