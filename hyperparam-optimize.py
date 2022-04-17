@@ -33,7 +33,7 @@ class GuitarLSTMModel(kt.HyperModel):
         model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate), loss=error_to_signal, metrics=[error_to_signal])
         return model
 
-    def fit(self, hp : kt.HyperParameters, model, *args, **kwargs):
+    def fit(self, hp : kt.HyperParameters, model : keras.Model, *args, **kwargs):
         input_size = hp.get('input_size')
         X_all = args[0]
         y_all = args[1]
@@ -106,6 +106,9 @@ def main(args):
     y_all = normalize(y_all).reshape(len(y_all),1)   
 
     # Run optimization ###################################################
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    sess = tf.Session(config=config)
     tuner.search(X_all,y_all, epochs=30, batch_size=batch_size, validation_split=test_size)    
 
     models = tuner.get_best_models(num_models=1)
