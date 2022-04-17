@@ -63,7 +63,7 @@ def error_to_signal(y_true, y_pred):
     return K.sum(tf.pow(y_true - y_pred, 2), axis=0) / K.sum(tf.pow(y_true, 2), axis=0) + 1e-10
     
 def save_wav(name, data):
-    wavfile.write(name, 44100, data.flatten().astype(np.float32))
+    wavfile.write(name, 44100, data.flatten().astype(np.float16))
 
 def normalize(data):
     data_max = max(data)
@@ -100,9 +100,9 @@ def main(args):
     in_rate, in_data = wavfile.read(args.in_file)
     out_rate, out_data = wavfile.read(args.out_file)
 
-    X_all = in_data.astype(np.float32).flatten()  
+    X_all = in_data.astype(np.float16).flatten()  
     X_all = normalize(X_all).reshape(len(X_all),1)   
-    y_all = out_data.astype(np.float32).flatten() 
+    y_all = out_data.astype(np.float16).flatten() 
     y_all = normalize(y_all).reshape(len(y_all),1)   
 
     # Run optimization ###################################################
