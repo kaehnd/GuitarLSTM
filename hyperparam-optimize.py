@@ -9,7 +9,6 @@ from keras.models import load_model
 import keras.backend as K
 import keras_tuner as kt
 
-import os
 from scipy import signal
 from scipy.io import wavfile
 import numpy as np
@@ -18,15 +17,13 @@ import math
 import h5py
 import argparse
 
-
-
 class GuitarLSTMModel(kt.HyperModel):
     def build(self, hp):
         learning_rate = hp.Float('learning_rate', 1e-4, 1e-2, sampling='log')
         conv1d_strides = hp.Int('conv1d_strides', 3, 12)
         conv1d_filters = hp.Int('conv1d_filters', 12, 26)
-        hidden_units= hp.Int('hidden_units', 36, 96)
-        input_size = hp.Int('input_size', 80, 150)
+        hidden_units= hp.Int('hidden_units', 36, 126)
+        input_size = hp.Int('input_size', 50, 200)
         
         model = Sequential()
         model.add(Conv1D(conv1d_filters, 12,strides=conv1d_strides, activation=None, padding='same',input_shape=(input_size,1)))
@@ -52,12 +49,9 @@ class GuitarLSTMModel(kt.HyperModel):
         return model.fit(
             X_random,
             y_random,
-            # Tune whether to shuffle the data in each epoch.
-            shuffle=hp.Boolean("shuffle"),
             **kwargs,
         )
 
-   
 def pre_emphasis_filter(x, coeff=0.95):
     return tf.concat([x, x - coeff * x], 1)
     
@@ -76,7 +70,6 @@ def normalize(data):
     data_min = min(data)
     data_norm = max(data_max,abs(data_min))
     return data / data_norm
-
 
 def main(args):
     '''Ths is a similar Tensorflow/Keras implementation of the LSTM model from the paper:
@@ -100,7 +93,7 @@ def main(args):
         GuitarLSTMModel(),
         objective='val_accuracy',
         max_epochs=args.max_epochs,
-        hyperband_iterations=2
+        hyperband_iterations=30
     )
 
     # Load and Preprocess Data ###########################################
@@ -114,9 +107,6 @@ def main(args):
 
     # Run optimization ###################################################
     tuner.search(X_all,y_all, epochs=30, batch_size=batch_size, validation_split=test_size)    
-
-
-
 
     models = tuner.get_best_models(num_models=1)
     hps = tuner.get_best_hyperparameters(num_trials=1)
@@ -168,8 +158,8 @@ if __name__ == "__main__":
     parser.add_argument("out_file")
     parser.add_argument("name")
     parser.add_argument("--batch_size", type=int, default=4096)
-    parser.add_argument("--max_epochs", type=int, default=2)
-    parser.add_argument("--create_plots", type=int, default=1)
+    parser.add_argument("--max_epochs", type=int, default=8)
+    parser.add_argument("--create_plots", type=int, default=0)
 
     args = parser.parse_args()
     main(args)
