@@ -91,7 +91,7 @@ def main(args):
 
     tuner = kt.Hyperband(
         GuitarLSTMModel(),
-        objective='val_accuracy',
+        objective=error_to_signal,
         max_epochs=args.max_epochs,
         hyperband_iterations=30
     )
