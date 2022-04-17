@@ -23,7 +23,7 @@ class GuitarLSTMModel(kt.HyperModel):
         conv1d_strides = hp.Int('conv1d_strides', 3, 12)
         conv1d_filters = hp.Int('conv1d_filters', 12, 26)
         hidden_units= hp.Int('hidden_units', 36, 126)
-        input_size = hp.Int('input_size', 50, 200)
+        input_size = hp.Int('input_size', 50, 160)
         
         model = Sequential()
         model.add(Conv1D(conv1d_filters, 12,strides=conv1d_strides, activation=None, padding='same',input_shape=(input_size,1)))
