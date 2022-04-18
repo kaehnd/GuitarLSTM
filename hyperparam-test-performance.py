@@ -17,7 +17,7 @@ import math
 import h5py
 import argparse
 import time
-
+import json
 
 class GuitarLSTMModel(kt.HyperModel):
     def build(self, hp):
@@ -91,6 +91,8 @@ def main(args):
 
     clear_session()
 
+    print('about to build tuner')
+
     tuner = kt.Hyperband(
         GuitarLSTMModel(),
         objective=kt.Objective('val_error_to_signal', direction='min'),
@@ -98,89 +100,56 @@ def main(args):
         hyperband_iterations=30
       )
 
+    print('about to load data')
     # Load and Preprocess Data ###########################################
     in_rate, in_data = wavfile.read(args.in_file)
     out_rate, out_data = wavfile.read(args.out_file)
 
     X_all = in_data.astype(np.float16).flatten()  
-    X_all = normalize(X_all).reshape(len(X_all),1)   
-    y_all = out_data.astype(np.float16).flatten() 
-    y_all = normalize(y_all).reshape(len(y_all),1)   
+    X_all = normalize(X_all).reshape(len(X_all),1)     
 
-    
-
-
+    print('about to reload tuner')
 
     tuner.reload()
 
     times = {}
 
     # for trial in tuner.oracle.trials:
-    trial = list(tuner.oracle.trials.values())[0]
-    print('Trial #: ' + trial.trial_id)
+    trials = list(tuner.oracle.trials.values())
+    length = len(trials)
+    print('Trying ' + str(length) + ' trials')
+    index = 1
+    for trial in trials :
+        print('Processing ' + str(index) + '/' + str(length))
+        print('\tTrial #: ' + trial.trial_id)
+        index = index + 1
 
-    hp : kt.HyperParameters = trial.hyperparameters
-    model : keras.Model = tuner.load_model(trial)
-    
-  
-    input_size = hp.get('input_size')
-    # print(input_size)
+        hp : kt.HyperParameters = trial.hyperparameters
+        model : keras.Model = tuner.load_model(trial)
+        
+        input_size = hp.get('input_size')
 
+        indices = np.arange(input_size) + np.arange(len(X_all)-input_size+1)[:,np.newaxis] 
+        X_ordered = tf.gather(X_all,indices) 
 
-    y_ordered = y_all[input_size-1:] 
+        shuffled_indices = np.random.permutation(len(X_ordered)) 
+        X_random = tf.gather(X_ordered,shuffled_indices)
 
-    indices = np.arange(input_size) + np.arange(len(X_all)-input_size+1)[:,np.newaxis] 
-    X_ordered = tf.gather(X_all,indices) 
+        init_time = time.perf_counter()
+        model.predict(X_random,batch_size=batch_size)
+        elapsed = time.perf_counter() - init_time
 
-    shuffled_indices = np.random.permutation(len(X_ordered)) 
-    X_random = tf.gather(X_ordered,shuffled_indices)
-    y_random = tf.gather(y_ordered, shuffled_indices)
-
-
-    init_time = time.perf_counter()
-    model.predict(X_random,batch_size=batch_size)
-    elapsed = time.perf_counter() - init_time
-
-    print('Trial 1 took: ' + str(elapsed) + 's')
-    time[trial.trial_id] = elapsed
-
-    init_time = time.perf_counter()
-    model.predict(X_random,batch_size=batch_size)
-    elapsed = time.perf_counter() - init_time
-
-    print('Trial 2 took: ' + str(elapsed) + 's')
-
-    init_time = time.perf_counter()
-    model.predict(X_random,batch_size=batch_size)
-    elapsed = time.perf_counter() - init_time
-
-    print('Trial 3 took: ' + str(elapsed) + 's')
-
-    init_time = time.perf_counter()
-    model.predict(X_random,batch_size=batch_size)
-    elapsed = time.perf_counter() - init_time
-
-    print('Trial 4 took: ' + str(elapsed) + 's')
-
-    init_time = time.perf_counter()
-    model.predict(X_random,batch_size=batch_size)
-    elapsed = time.perf_counter() - init_time
-
-    print('Trial 5 took: ' + str(elapsed) + 's')
-
-
-
-
-    
-
-
+        print('\tTrial took: ' + str(elapsed) + 's')
+        times[trial.trial_id] = elapsed
+        with open("times.json", "w") as outfile:
+            json.dump(times, outfile)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("in_file")
     parser.add_argument("out_file")
     parser.add_argument("name")
-    parser.add_argument("--batch_size", type=int, default=4096)
+    parser.add_argument("--batch_size", type=int, default=1024)
     parser.add_argument("--max_epochs", type=int, default=8)
     parser.add_argument("--create_plots", type=int, default=1)
 
