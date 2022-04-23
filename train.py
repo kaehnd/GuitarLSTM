@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import math
 import h5py
 import argparse
-
+from trainingplot import PlotLearning
    
 def pre_emphasis_filter(x, coeff=0.95):
     return tf.concat([x, x - coeff * x], 1)
@@ -58,6 +58,7 @@ def main(args):
         --training_mode=1   Accuracy training
         --training_mode=2   Extended training (set max_epochs as desired, for example 50+)
     '''
+    callbacks_list = [PlotLearning()]
 
     name = args.name
     if not os.path.exists('models/'+name):
@@ -85,11 +86,16 @@ def main(args):
         conv1d_strides = 4
         conv1d_filters = 36
         hidden_units= 64
-    else:                       # Extended Training (~60x longer than Accuracy Training)
+    elif train_mode == 2:       # Extended Training (~60x longer than Accuracy Training)
         learning_rate = 0.0005 
         conv1d_strides = 3
         conv1d_filters = 36
         hidden_units= 96
+    else:                        # optimal
+        learning_rate = 0.00756 
+        conv1d_strides = 8
+        conv1d_filters = 12
+        hidden_units= 107
 
     # Create Sequential Model ###########################################
     clear_session()
@@ -150,8 +156,11 @@ def main(args):
         X_random = tf.gather(X_ordered,shuffled_indices)
         y_random = tf.gather(y_ordered, shuffled_indices)
 
+
+
+
         # Train Model ###################################################
-        model.fit(X_random,y_random, epochs=epochs, batch_size=batch_size, validation_split=test_size)    
+        model.fit(X_random,y_random, epochs=epochs, batch_size=batch_size, validation_split=test_size, callbacks=callbacks_list)    
 
         model.save('models/'+name+'/'+name+'.h5')
 
@@ -197,11 +206,11 @@ if __name__ == "__main__":
     parser.add_argument("in_file")
     parser.add_argument("out_file")
     parser.add_argument("name")
-    parser.add_argument("--training_mode", type=int, default=0)
+    parser.add_argument("--training_mode", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=4096)
-    parser.add_argument("--max_epochs", type=int, default=1)
+    parser.add_argument("--max_epochs", type=int, default=8)
     parser.add_argument("--create_plots", type=int, default=1)
-    parser.add_argument("--input_size", type=int, default=100)
+    parser.add_argument("--input_size", type=int, default=89)
     parser.add_argument("--split_data", type=int, default=1)
     args = parser.parse_args()
     main(args)

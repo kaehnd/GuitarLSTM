@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import math
 import h5py
 import argparse
+import time
 
 
 def save_wav(name, data):
@@ -59,7 +60,10 @@ def predict(args):
 
     # Run prediction and save output audio as a wav file
     print("Running prediction..")
+    init_time = time.perf_counter()
     prediction = model.predict(X_ordered, batch_size=args.batch_size)
+    elapsed = time.perf_counter() - init_time
+    print ('Time: ' + str(elapsed))
     save_wav(name, prediction)
 
 if __name__ == "__main__":
