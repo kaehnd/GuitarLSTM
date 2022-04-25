@@ -111,8 +111,8 @@ def main(args):
     in_rate, in_data = wavfile.read(args.in_file)
     out_rate, out_data = wavfile.read(args.out_file)
 
-X_all = in_data.astype(np.float32).flatten()  
-X_all = normalize(X_all).reshape(len(X_all),1)   
+    X_all = in_data.astype(np.float32).flatten()  
+    X_all = normalize(X_all).reshape(len(X_all),1)   
     y_all = out_data.astype(np.float32).flatten() 
     y_all = normalize(y_all).reshape(len(y_all),1)   
 
