@@ -149,18 +149,16 @@ X_all = normalize(X_all).reshape(len(X_all),1)
     else:
         y_ordered = y_all[input_size-1:] 
 
-indices = np.arange(input_size) + np.arange(len(X_all)-input_size+1)[:,np.newaxis] 
-X_ordered = tf.gather(X_all,indices) 
+        indices = np.arange(input_size) + np.arange(len(X_all)-input_size+1)[:,np.newaxis] 
+        X_ordered = tf.gather(X_all,indices) 
 
-shuffled_indices = np.random.permutation(len(X_ordered)) 
-X_random = tf.gather(X_ordered,shuffled_indices)
-y_random = tf.gather(y_ordered, shuffled_indices)
-
-
+        shuffled_indices = np.random.permutation(len(X_ordered)) 
+        X_random = tf.gather(X_ordered,shuffled_indices)
+        y_random = tf.gather(y_ordered, shuffled_indices)
 
 
         # Train Model ###################################################
-        model.fit(X_random,y_random, epochs=epochs, batch_size=batch_size, validation_split=test_size)    
+        model.fit(X_random,y_random, epochs=epochs, batch_size=batch_size, validation_split=test_size, callbacks=callbacks_list)    
 
         model.save('models/'+name+'/'+name+'.h5')
 
