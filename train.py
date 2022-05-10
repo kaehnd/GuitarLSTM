@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import LSTM, Conv1D, Dense
+from tensorflow.compat.v1.keras.layers import CuDNNLSTM
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.backend import clear_session
 import tensorflow.keras.backend as K
@@ -110,7 +111,8 @@ def main(args):
     model = Sequential()
     model.add(Conv1D(conv1d_filters, 12,strides=conv1d_strides, activation=None, padding='same',input_shape=(input_size,1)))
     model.add(Conv1D(conv1d_filters, 12,strides=conv1d_strides, activation=None, padding='same'))
-    model.add(LSTM(hidden_units))
+    # model.add(LSTM(hidden_units))
+    model.add(CuDNNLSTM(hidden_units))
     model.add(Dense(1, activation=None))
     model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse', metrics=[error_to_signal])
     print(model.summary())
