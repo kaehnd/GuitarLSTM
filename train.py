@@ -8,32 +8,39 @@ import tensorflow.keras.backend as K
 from tensorflow.keras.utils import Sequence
 
 import os
+import math
 from scipy.io import wavfile
 import numpy as np
-import matplotlib.pyplot as plt
 import h5py
 import argparse
-from trainingplot import PlotLearning
+import plot
 
 class WindowArray(Sequence):
     def __init__(self, x, y, window_len, batch_size=32):
         self.x = x
-        self.y = y[window_len-1:] 
+        self.y = y[window_len:] 
         self.window_len = window_len
         self.batch_size = batch_size
         
     def __len__(self):
-        return (len(self.x) - self.window_len+1) // self.batch_size
+        return math.ceil((len(self.x) - self.window_len) / self.batch_size)
     
     def __getitem__(self, index):
-        x_out = np.stack([self.x[idx: idx+self.window_len] for idx in range(index*self.batch_size, (index+1)*self.batch_size)])
-        y_out = self.y[index*self.batch_size:(index+1)*self.batch_size]
+        end_index = (index+1) * self.batch_size
+        if index == self.__len__() - 1:
+            end_index = len(self.x) - self.window_len
+
+        stack = []
+        for idx in range(index * self.batch_size, end_index):
+            stack.append(self.x[idx:idx+self.window_len])
+        x_out = np.stack(stack)
+        y_out = self.y[index * self.batch_size:end_index]
         return x_out, y_out
    
 def pre_emphasis_filter(x, coeff=0.95):
     return tf.concat([x, x - coeff * x], 1)
     
-def error_to_signal(y_true, y_pred): 
+def error_to_signal(y_true, y_pred):
     """
     Error to signal ratio with pre-emphasis filter:
     """
@@ -68,7 +75,6 @@ def main(args):
         --training_mode=1   Accuracy training
         --training_mode=2   Extended training (set max_epochs as desired, for example 50+)
     '''
-    callbacks_list = [PlotLearning()]
 
     name = args.name
     if not os.path.exists('models/'+name):
@@ -140,7 +146,7 @@ def main(args):
     # Get the last 20% of the wav data to run prediction and plot results
     y_the_rest, y_last_part = np.split(y_all, [int(len(y_all)*.8)])
     x_the_rest, x_last_part = np.split(X_all, [int(len(X_all)*.8)])
-    y_test = y_last_part[input_size-1:]
+    y_test = y_last_part[input_size:]
     test_arr = WindowArray(x_last_part, y_last_part, input_size, batch_size=batch_size)
 
     prediction = model.predict(test_arr)
@@ -160,15 +166,13 @@ def main(args):
     # Create Analysis Plots ###########################################
     if args.create_plots == 1:
         print("Plotting results..")
-        import plot
-
         plot.analyze_pred_vs_actual({   'output_wav':'models/'+name+'/y_test.wav',
-                                            'pred_wav':'models/'+name+'/y_pred.wav', 
-                                            'input_wav':'models/'+name+'/x_test.wav',
-                                            'model_name':name,
-                                            'show_plots':1,
-                                            'path':'models/'+name
-                                        })
+                                        'pred_wav':'models/'+name+'/y_pred.wav', 
+                                        'input_wav':'models/'+name+'/x_test.wav',
+                                        'model_name':name,
+                                        'show_plots':1,
+                                        'path':'models/'+name
+                                    })
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
